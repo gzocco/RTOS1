@@ -27,9 +27,9 @@
 #ifndef __MOTORCONTROL_H__
 #define __MOTORCONTROL_H__
 // Defino los pines que controlan los motores.
-#define motor1EnA	GPIO2	//PWM10	//LED1	//Deberian tener capacidad de PWM
+#define motor1EnA	T_COL1// GPIO2	//PWM10	//LED1	//Deberian tener capacidad de PWM
 #define motor1Ini1	GPIO4	//LED2
-#define motor1Ini2	GPIO0	//LED3
+#define motor1Ini2	GPIO6	//GPIO0	//LED3
 #define motor2EnB	GPIO8	//PWM6	//LEDR	//Deberian tener capacidad de PWM
 #define motor2Ini3	GPIO5	//LEDG	//GPIO4
 #define motor2Ini4	GPIO7	//LEDB

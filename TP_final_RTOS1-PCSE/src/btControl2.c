@@ -44,7 +44,7 @@
 #include "btControl.h"
 #include "btInit.h"
 #include "motorControl.h"
-//extern DesplazaFsmState_t DesplazaFsmState;
+extern DesplazaFsmState_t DesplazaFsmState;
 extern void btInit (void);
 extern void DesplazaFsmInit(void);
 extern void DesplazaFsmUpdate(void);
@@ -52,6 +52,8 @@ extern void DesplazaFsmUpdate(void);
 extern void fsmButtonInit( void );
 extern void fsmButtonUpdate( gpioMap_t tecla );
 //
+
+uint32_t counter = 0;
 
 uint32_t get_t_pulsacion();
 void  reset_t_pulsacion();
@@ -148,30 +150,74 @@ por BT e interpretarlos.
 
 
 /*==================[definiciones de funciones externas]=====================*/
+void vApplicationTickHook( void )
+{
+	counter++;
+}
+
 
 void btComTask ( void* taskParmPtr )
 {
-	uint32_t t_pulsacion_local;
+	uint32_t t_pulsacion_local;	// De la tarea led.
 
-   // ---------- REPETIR POR SIEMPRE --------------------------
-   while(TRUE)
-   {
-	   t_pulsacion_local =get_t_pulsacion();
+	uint8_t data = 0;	// Byte de recepcion de BT.
 
-	   if( t_pulsacion_local ==0)
-	   {
-		   vTaskDelay( 100 / portTICK_RATE_MS );
-	   }
-	   else
-	   {
-		   gpioWrite( LED1, ON );
-		     // Envia la tarea al estado bloqueado durante 1 s (delay)
-		     vTaskDelay( t_pulsacion_local  );
-		     gpioWrite( LED1, OFF );
+	// ---------- REPETIR POR SIEMPRE --------------------------
+	while(TRUE)
+	{
+		//Esta parte es de la tarea led que dejo aca para no romper con lo demas...
+		//Es la que enciende el LED1 durante el tiempo que pulse TEC1 del ejemplo.
+		// Desde ACA
+		t_pulsacion_local =get_t_pulsacion();
 
-		     reset_t_pulsacion();
-	   }
-   }
+		if( t_pulsacion_local ==0)
+		{
+			vTaskDelay( 100 / portTICK_RATE_MS );
+		}
+		else
+		{
+			gpioWrite( LED1, ON );
+			// Envia la tarea al estado bloqueado durante 1 s (delay)
+			vTaskDelay( t_pulsacion_local  );
+			gpioWrite( LED1, OFF );
+
+			reset_t_pulsacion();
+		}
+		// Hasta ACA
+
+		// Aca comienza tarea de recepcion de datos BT.
+		if( uartReadByte( UART_BLUETOOTH, &data ) ) {
+			if( data == '0' ) {
+				DesplazaFsmState = MOTORS_STOP;
+				//motorControl (0, 10, 20);
+				//gpioWrite( LEDB, ON );
+			}
+			if( data == '1' ) {
+				DesplazaFsmState = FORWARD;
+				//motorControl (1, 10, 20);
+				// gpioWrite( LEDB, OFF );
+			}
+			if( data == '2' ) {
+				DesplazaFsmState = BACKWARD;
+				//motorControl (2, 10, 20);
+				//gpioWrite( LEDB, ON );
+			}
+			if( data == '3' ) {
+				DesplazaFsmState = RIGHT;
+				//motorControl (3, 10, 20);
+				//gpioWrite( LEDB, ON );
+			}
+			if( data == '4' ) {
+				DesplazaFsmState = LEFT;
+				//motorControl (4, 10, 20);
+				//gpioWrite( LEDB, ON );
+			}
+			// Esto me va a servir para reenviar data de la UART BLUETOOTH a la PC para DEBUG.
+			uartWriteString( UART_PC, "Byte Recibido por BT: \r\n" );
+			uartWriteByte( UART_PC, data );
+
+		}
+	}
 }
 
 
@@ -210,15 +256,4 @@ void tarea_tecla__( void* taskParmPtr )
       vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
    }
 }
-
-
-
-uint32_t counter = 0;
-
-
-void vApplicationTickHook( void )
-{
-	counter++;
-}
-
 /*==================[fin del archivo]========================================*/
