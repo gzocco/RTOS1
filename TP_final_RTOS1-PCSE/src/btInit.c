@@ -43,6 +43,11 @@ void btInit (void)
 	uartConfig( UART_BLUETOOTH, 9600 );
 	uartWriteString( UART_PC, "UART_BLUETOOTH para modulo Bluetooth configurada.\r\n");
 
+	// Para usar comandos AT hay que poner el PIN 34 del HC-05 a 3.3v, apagarlo y prenderlo.
+	// Y poner la UART en 38400 baud. Ahi se puede tirar comandos AT.
+
+
+
 	//uartWriteString( UART_PC, "Testeo si el modulo esta conectado enviando: AT\r\n" );
 	//	if( hm10bleTest( UART_BLUETOOTH ) ){
 	//		uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );

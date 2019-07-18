@@ -75,7 +75,7 @@ void tarea_tecla__( void* taskParmPtr );
 void motorControlTask ( void* taskParmPtr );
 void btComTask ( void* taskParmPtr );
 void btInit(void);
-//void tarea_led__( void* taskParmPtr );
+void tarea_led__( void* taskParmPtr );
 /*==================[funcion principal]======================================*/
 
 // FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE ENCENDIDO O RESET.
@@ -84,6 +84,11 @@ int main(void)
    // ---------- CONFIGURACIONES ------------------------------
    // Inicializar y configurar la plataforma
    boardConfig();
+
+   // Control del modulo BT. HC-05.
+   gpioInit( CAN_RD, GPIO_INPUT );	// Pin STATE del modulo BT HC-05.
+   gpioInit( CAN_TD, GPIO_OUTPUT );	// Transistor ON/OFF BT HC-05.
+   gpioInit( T_FIL0, GPIO_OUTPUT );	// PIN 34 de BT HC-05.
 
    // Inicializo lo referido a btControl.
    btInit();
@@ -127,9 +132,21 @@ por BT e interpretarlos.
 			  (const char *)"tarea_tecla__",     // Nombre de la tarea como String amigable para el usuario
 			  configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
 			  0,                          // Parametros de tarea
-			  tskIDLE_PRIORITY+1,         // Prioridad de la tarea
+			  tskIDLE_PRIORITY+2,         // Prioridad de la tarea
 			  0                           // Puntero a la tarea creada en el sistema
       );
+
+      // Crear tarea en freeRTOS
+            xTaskCreate(
+            		tarea_led__,                     // Funcion de la tarea a ejecutar
+      			  (const char *)"tarea_led__",     // Nombre de la tarea como String amigable para el usuario
+      			  configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
+      			  0,                          // Parametros de tarea
+      			  tskIDLE_PRIORITY+2,         // Prioridad de la tarea
+      			  0                           // Puntero a la tarea creada en el sistema
+            );
+
+
 
    // Iniciar scheduler
    vTaskStartScheduler();
@@ -155,14 +172,9 @@ void vApplicationTickHook( void )
 	counter++;
 }
 
-
-void btComTask ( void* taskParmPtr )
+void tarea_led__( void* taskParmPtr )
 {
 	uint32_t t_pulsacion_local;	// De la tarea led.
-
-	uint8_t data = 0;	// Byte de recepcion de BT.
-
-	// ---------- REPETIR POR SIEMPRE --------------------------
 	while(TRUE)
 	{
 		//Esta parte es de la tarea led que dejo aca para no romper con lo demas...
@@ -184,42 +196,59 @@ void btComTask ( void* taskParmPtr )
 			reset_t_pulsacion();
 		}
 		// Hasta ACA
+	}
 
+}
+
+
+void btComTask ( void* taskParmPtr )
+{
+	uint8_t data = 0;	// Byte de recepcion de BT.
+
+	// ---------- REPETIR POR SIEMPRE --------------------------
+	while(TRUE)
+	{
 		// Aca comienza tarea de recepcion de datos BT.
-		if( uartReadByte( UART_BLUETOOTH, &data ) ) {
-			if( data == '0' ) {
-				DesplazaFsmState = MOTORS_STOP;
-				//motorControl (0, 10, 20);
-				//gpioWrite( LEDB, ON );
-			}
-			if( data == '1' ) {
-				DesplazaFsmState = FORWARD;
-				//motorControl (1, 10, 20);
-				// gpioWrite( LEDB, OFF );
-			}
-			if( data == '2' ) {
-				DesplazaFsmState = BACKWARD;
-				//motorControl (2, 10, 20);
-				//gpioWrite( LEDB, ON );
-			}
-			if( data == '3' ) {
-				DesplazaFsmState = RIGHT;
-				//motorControl (3, 10, 20);
-				//gpioWrite( LEDB, ON );
-			}
-			if( data == '4' ) {
-				DesplazaFsmState = LEFT;
-				//motorControl (4, 10, 20);
-				//gpioWrite( LEDB, ON );
-			}
-			// Esto me va a servir para reenviar data de la UART BLUETOOTH a la PC para DEBUG.
-			uartWriteString( UART_PC, "Byte Recibido por BT: \r\n" );
-			uartWriteByte( UART_PC, data );
+		if (!gpioRead (CAN_RD)){
+			uartWriteString( UART_PC, "Nadie conectado al BT.\r\n" );
+		}
+		else
+		{
+			if( uartReadByte( UART_BLUETOOTH, &data ) ) {
 
+				if( data == '0' ) {
+					DesplazaFsmState = MOTORS_STOP;
+					//motorControl (0, 10, 20);
+					//gpioWrite( LEDB, ON );
+				}
+				if( data == '1' ) {
+					DesplazaFsmState = FORWARD;
+					//motorControl (1, 10, 20);
+					// gpioWrite( LEDB, OFF );
+				}
+				if( data == '2' ) {
+					DesplazaFsmState = BACKWARD;
+					//motorControl (2, 10, 20);
+					//gpioWrite( LEDB, ON );
+				}
+				if( data == '3' ) {
+					DesplazaFsmState = RIGHT;
+					//motorControl (3, 10, 20);
+					//gpioWrite( LEDB, ON );
+				}
+				if( data == '4' ) {
+					DesplazaFsmState = LEFT;
+					//motorControl (4, 10, 20);
+					//gpioWrite( LEDB, ON );
+				}
+				// Esto me va a servir para reenviar data de la UART BLUETOOTH a la PC para DEBUG.
+				uartWriteString( UART_PC, "Byte Recibido por BT: \r\n" );
+				uartWriteByte( UART_PC, data );
+
+			}
 		}
 	}
 }
-
 
 // Implementacion de funcion de la tarea
 void motorControlTask ( void* taskParmPtr )
