@@ -52,11 +52,32 @@ extern void DesplazaFsmUpdate(void);
 extern void fsmButtonInit( void );
 extern void fsmButtonUpdate( gpioMap_t tecla );
 //
-
+//	Para debounce de TEC1
 uint32_t counter = 0;
-
 uint32_t get_t_pulsacion();
 void  reset_t_pulsacion();
+// Para debounce de TEC1
+
+// Para controlar maquina de estados que control el MODO DE OPERACION.
+
+typedef enum{
+	INICIALIZANDO,
+	READY,
+	CONFIGURACION,
+	RCONTROL,
+	AUTONAV,
+	CONLOST,
+	ERR
+} OpeModeFsmState_t;
+// Variable that hold the current state
+OpeModeFsmState_t OpeModeFsmState;
+
+void OpeModeFsmInit( void );
+void OpeModeFsmSet( OpeModeFsmState_t OpeMode);
+OpeModeFsmState_t OpeModeFsmGet(void);
+
+// Para controlar maquina de estados que control el MODO DE OPERACION.
+
 
 /*==================[definiciones y macros]==================================*/
 
@@ -93,14 +114,16 @@ int main(void)
    // Inicializo lo referido a btControl.
    btInit();
    DesplazaFsmInit();
-   //
+   OpeModeFsmInit();	// Falta programar que puebe todas las cosas...
 
    // UART for debug messages
    debugPrintConfigUart( UART_USB, 115200 );
-   debugPrintlnString( "btControl con RTOS" );
+   debugPrintlnString( "Control con RTOS" );
 
    // Led para dar se�al de vida
    gpioWrite( LED3, ON );
+   debugPrintlnString( "Inicializado. OK." );	// Ya deberia de haber hecho todas las verificaciones.
+   OpeModeFsmSet(READY);
 
 /* Voy a crear 2 tareas. 1 para accionar los motores y otra para recibir los comandos
 por BT e interpretarlos.
@@ -145,9 +168,6 @@ por BT e interpretarlos.
       			  tskIDLE_PRIORITY+2,         // Prioridad de la tarea
       			  0                           // Puntero a la tarea creada en el sistema
             );
-
-
-
    // Iniciar scheduler
    vTaskStartScheduler();
 
@@ -171,6 +191,25 @@ void vApplicationTickHook( void )
 {
 	counter++;
 }
+
+
+void OpeModeFsmInit( void )
+{
+	// Example:
+	// boardInit();          // Initialize hardware
+	OpeModeFsmState = INICIALIZANDO;   // Set initial state
+}
+
+void OpeModeFsmSet( OpeModeFsmState_t OpeMode)
+{
+	OpeModeFsmState = OpeMode;
+}
+
+OpeModeFsmState_t OpeModeFsmGet()
+{
+	return OpeModeFsmState;
+}
+
 
 void tarea_led__( void* taskParmPtr )
 {
@@ -208,12 +247,18 @@ void btComTask ( void* taskParmPtr )
 	// ---------- REPETIR POR SIEMPRE --------------------------
 	while(TRUE)
 	{
+		static bool_t waitBT=1;
 		// Aca comienza tarea de recepcion de datos BT.
 		if (!gpioRead (CAN_RD)){
-			uartWriteString( UART_PC, "Nadie conectado al BT.\r\n" );
+			if (waitBT)
+			{
+			uartWriteString( UART_PC, "Esperando Conexion al BT.\r\n" );
+			waitBT=0;
+			}
 		}
 		else
 		{
+			waitBT=1;
 			if( uartReadByte( UART_BLUETOOTH, &data ) ) {
 
 				if( data == '0' ) {
