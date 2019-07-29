@@ -60,25 +60,57 @@ int main( void )
 
    // Inicializar y configurar la plataforma
    boardConfig();
-   gpioInit( CAN_RD, GPIO_INPUT );
+
+
+   gpioInit( CAN_RD, GPIO_INPUT );	// Pin STATE del modulo BT HC-05.
+   gpioInit( CAN_TD, GPIO_OUTPUT );	// Transistor ON/OFF BT HC-05.
+   gpioInit( T_FIL0, GPIO_OUTPUT );	// PIN 34 de BT HC-05.
 
    // Inicializar UART_USB para conectar a la PC
-   uartConfig( UART_PC, 9600 );
-   uartWriteString( UART_PC, "UART_PC configurada.\r\n" );
+       uartConfig( UART_PC, 9600 );
+       uartWriteString( UART_PC, "UART_PC configurada.\r\n" );
+
+
+   // Para entrar en modo AT en el HC-05. VERSION:2.0-20100601.
+   gpioWrite(CAN_TD,LOW);	// Apago HC-05 BT
+   gpioWrite(T_FIL0,HIGH);	// Pongo PIN 34 HIGH
+   gpioWrite(CAN_TD,HIGH);	// Enciendo HC-05 BT
+   uartConfig( UART_BLUETOOTH, 38400);	// Config UART a 38400 que es la BaudRate FIJO de la HC-05 en modo AT.
+   delay(500);	// Para darle tiempo a que el HC-05 reaccione.
+   uartWriteString( UART_PC, "UART_BLUETOOTH Configurado para Modo AT (38400).\r\n" );
+   // Para entrar en modo AT en el HC-05.
+
+
+   // Verifico funcionamiento de modulo HC-05.
+   uartWriteString( UART_PC, "Testeto si el modulo esta conectado enviando: AT\r\n" );
+      if( hm10bleTest( UART_BLUETOOTH ) ){
+         uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );
+      }
+      else{
+         uartWriteString( UART_PC, "No funciona.\r\n" );
+      }
+
+      // Verifico funcionamiento de modulo HC-05.
 
    // Inicializar UART_232 para conectar al modulo bluetooth
-   uartConfig( UART_BLUETOOTH, 38400);
-   uartWriteString( UART_PC, "UART_BLUETOOTH para modulo Bluetooth configurada.\r\n" );
-   
+   //uartConfig( UART_BLUETOOTH, 38400);
+   //uartWriteString( UART_PC, "UART_BLUETOOTH para modulo Bluetooth configurada.\r\n" );
+
+
+   // Para salir de modo AT en el HC-05. VERSION:2.0-20100601.
+      gpioWrite(CAN_TD,LOW);	// Apago HC-05 BT
+      gpioWrite(T_FIL0,LOW);	// Pongo PIN 34 HIGH
+      delay(500);	// Para darle tiempo a que el HC-05 reaccione.
+      gpioWrite(CAN_TD,HIGH);	// Enciendo HC-05 BT
+      uartConfig( UART_BLUETOOTH, 9600);	// Config UART a 38400 que es la BaudRate FIJO de la HC-05 en modo AT.
+      delay(500);	// Para darle tiempo a que el HC-05 reaccione.
+      uartWriteString( UART_PC, "UART_BLUETOOTH Configurado para Modo SSP (9600).\r\n" );
+      // Para salir de modo AT en el HC-05. VERSION:2.0-20100601.
+
+
    uint8_t data = 0;
    
-   uartWriteString( UART_PC, "Testeto si el modulo esta conectado enviando: AT\r\n" );
-   if( hm10bleTest( UART_BLUETOOTH ) ){
-      uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );
-   }
-   else{
-      uartWriteString( UART_PC, "No funciona.\r\n" );
-   }
+
 
    // ---------- REPETIR POR SIEMPRE --------------------------
    while( TRUE ) {

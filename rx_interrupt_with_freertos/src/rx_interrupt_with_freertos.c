@@ -7,6 +7,10 @@ DEFINES+=USE_FREERTOS
 
 on config.mk to tell SAPI to use FreeRTOS Systick
 
+Hasta aca Logro recibir y separar un string de datos proveniendo de la UART
+el string finaliza con ENTER (\n\r)
+Tengo que corregir los chequeos por string mas prolongados que el array
+y demas para que no rompa.
 */
 
 #include "FreeRTOS.h"
@@ -139,6 +143,10 @@ int main(void)
 {
    /* Inicializar la placa */
    boardConfig();
+   gpioInit( CAN_RD, GPIO_INPUT );	// Pin STATE del modulo BT HC-05.
+   gpioInit( CAN_TD, GPIO_OUTPUT );	// Transistor ON/OFF BT HC-05.
+   gpioInit( T_FIL0, GPIO_OUTPUT );	// PIN 34 de BT HC-05.
+   gpioWrite (CAN_TD,HIGH);
 
    /* Inicializar la UART_USB junto con las interrupciones de Tx y Rx */
    uartConfig(UART_232, 9600);
