@@ -39,7 +39,7 @@ void DesplazaFsmInit( void );
 
 /*=====[Main function, program entry point after power on or reset]==========*/
 
-int pepe( void )
+int pepe( void ) //No se usa.
 {
 	// ----- Setup -----------------------------------
 	btInit ();

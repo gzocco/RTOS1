@@ -10,6 +10,9 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
+#include "queue.h"
+/* Demo includes. */
+#include "supporting_functions.h"
 
 // sAPI header
 #include "sapi.h"
@@ -81,6 +84,16 @@ typedef struct {
 	char cmd5[5];
 } msg_t;
 
+
+// Para comunicacion por BT.
+char rxMsgFrame[MAX_MSG_SIZE]="";
+bool frame_rec=FALSE;
+// Para comunicacion por BT.
+
+/*==================[definiciones de datos internos de Colas]=========================*/
+QueueHandle_t xQueueBTrx_Control;		// Sacado de ejemplo 10 de FreeRTOS.
+
+
 //msg_t message;
 
 /*={{0,0,0,0,0},
@@ -92,10 +105,7 @@ typedef struct {
 				// "xxxx,xxxx,xxxx,xxxx,xxxx,xxxx\n" string del mensaje esperado
 */
 
-// Para comunicacion por BT.
-char rxMsgFrame[MAX_MSG_SIZE]="";
-bool frame_rec=FALSE;
-// Para comunicacion por BT.
+
 
 /*==================[definiciones de datos externos]=========================*/
 
@@ -108,6 +118,8 @@ void motorControlTask ( void* taskParmPtr );
 void btComTask ( void* taskParmPtr );
 void btInit(void);
 void tarea_led__( void* taskParmPtr );
+
+
 
 void btComParse (void);
 
@@ -138,7 +150,6 @@ int main(void)
    // Inicializar y configurar la plataforma
 	boardConfig();
 	btInit();
-
 	// Control del modulo BT. HC-05.
 	gpioInit( HC05_STATE_PIN, GPIO_INPUT );	// Pin STATE del modulo BT HC-05.
 	gpioInit( HC05_POWERTR_PIN, GPIO_OUTPUT );	// Transistor ON/OFF BT HC-05.
@@ -146,18 +157,42 @@ int main(void)
 
 	gpioWrite (HC05_POWERTR_PIN,HIGH);		// Enciendo modulo BT.
 
-	/*delay_t tiempo1;
-   delay_t tiempo2;
-   	delayInit( &tiempo1, 5000);
-   	delayInit( &tiempo2, 1000);
-   	*/
-
 	// verifHC05(); Hasta hacer que ande o armarlo como una tarea de FreeRTOS.
 
-      DesplazaFsmInit();
-   OpeModeFsmInit();	// Falta programar que puebe todas las cosas...
+	xQueueBTrx_Control = xQueueCreate( 4, sizeof( msg_t ) );
 
-   // UART for debug messages
+	if( xQueueBTrx_Control != NULL ) {
+		// Crear tarea en freeRTOS
+		xTaskCreate(
+				motorControlTask,                     // Funcion de la tarea a ejecutar
+				(const char *)"mControlTask",     // Nombre de la tarea como String amigable para el usuario
+				configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
+				0,                          // Parametros de tarea
+				tskIDLE_PRIORITY+1,         // Prioridad de la tarea
+				0                           // Puntero a la tarea creada en el sistema
+		);
+
+		// Crear tarea en freeRTOS
+		xTaskCreate(
+				btComTask,                     // Funcion de la tarea a ejecutar
+				(const char *)"btCom",     // Nombre de la tarea como String amigable para el usuario
+				configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
+				0,                          // Parametros de tarea
+				tskIDLE_PRIORITY+1,         // Prioridad de la tarea
+				0                           // Puntero a la tarea creada en el sistema
+		);
+
+
+		//vTaskStartScheduler(); Lo prendo mas tarde.
+	} else {
+		/* The queue could not be created. */
+	}
+
+
+	DesplazaFsmInit();
+	OpeModeFsmInit();	// Falta programar que puebe todas las cosas...
+
+	// UART for debug messages
    debugPrintConfigUart( UART_USB, 9600 );
    debugPrintlnString( "Control con RTOS \n\r" );
 
@@ -184,28 +219,8 @@ int main(void)
    OpeModeFsmSet(READY);
 
 /* Voy a crear 2 tareas. 1 para accionar los motores y otra para recibir los comandos
-por BT e interpretarlos.
+por BT e interpretarlos. Las saque y las cree cuando creo la cola.
 */
-
-   // Crear tarea en freeRTOS
-   xTaskCreate(
-      motorControlTask,                     // Funcion de la tarea a ejecutar
-      (const char *)"mControlTask",     // Nombre de la tarea como String amigable para el usuario
-      configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
-      0,                          // Parametros de tarea
-      tskIDLE_PRIORITY+1,         // Prioridad de la tarea
-      0                           // Puntero a la tarea creada en el sistema
-   );
-
-   // Crear tarea en freeRTOS
-      xTaskCreate(
-    	 btComTask,                     // Funcion de la tarea a ejecutar
-         (const char *)"btCom",     // Nombre de la tarea como String amigable para el usuario
-         configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
-         0,                          // Parametros de tarea
-         tskIDLE_PRIORITY+1,         // Prioridad de la tarea
-         0                           // Puntero a la tarea creada en el sistema
-      );
 
       // Crear tarea en freeRTOS
       xTaskCreate(
@@ -304,6 +319,7 @@ void btComTask ( void* taskParmPtr )
 	//char *eptr;	// Para convertir a int.
 
 
+
 	// ---------- REPETIR POR SIEMPRE --------------------------
 	while(TRUE)
 	{
@@ -343,18 +359,103 @@ void btComTask ( void* taskParmPtr )
 // Implementacion de funcion de la tarea
 void motorControlTask ( void* taskParmPtr )
 {
-   //fsmButtonInit();
+	msg_t lReceivedValue;
+	BaseType_t xStatus;
+	const TickType_t xTicksToWait = pdMS_TO_TICKS( 100UL );	// Son 100ms=100UL.
+
+
+	uint32_t param1=0;	// Para convertir a int
+	uint32_t param2=0;
+	char *eptr;	// Para convertir a int.
+
+	//fsmButtonInit();
 
    // Tarea periodica cada 1 ms
-   portTickType xPeriodicity =  20 / portTICK_RATE_MS;
-   portTickType xLastWakeTime = xTaskGetTickCount();
+  // portTickType xPeriodicity =  20 / portTICK_RATE_MS;
+  // portTickType xLastWakeTime = xTaskGetTickCount();
    
    // ---------- REPETIR POR SIEMPRE --------------------------
    while(TRUE)
    {
-	   DesplazaFsmUpdate();
+	   if( uxQueueMessagesWaiting( xQueueBTrx_Control ) != 0 ) {
+	            vPrintString( "Queue should have been empty!\r\n" );
+	         }
+	   xStatus = xQueueReceive( xQueueBTrx_Control, &lReceivedValue, xTicksToWait );
 
-      vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
+	         if( xStatus == pdPASS ) {
+	            /* Data was successfully received from the queue, print out the received
+	            value. */
+	        	 vPrintTwoStrings( "Received0 = ", lReceivedValue.cmd0 );
+	        	 vPrintTwoStrings( "Received1= ", lReceivedValue.cmd1 );
+	        	 if (strcmp(lReceivedValue.cmd0, "CONF") == 0)
+	        	 	   	{
+	        	 	   		// Cambia el estado general segun el comando.
+	        	 	   		/*printf ("Comando CONF \n\r");
+	        	 	   		printf ("cmd: %s \n\r ", lReceivedValue.cmd0);
+	        	 	   		printf ("parametro 1: %s \n\r ", lReceivedValue.cmd1);
+	        	 	   		printf ("parametro 2: %s \n\r ", lReceivedValue.cmd2);
+	        	 	   		param1= strtol (lReceivedValue.cmd1,&eptr,10 );
+	        	 	   		param2= strtol (lReceivedValue.cmd2,&eptr,10 );
+	        	 	   		printf ("Integer de param1 %d \n\r ", param1 );
+	        	 	   		printf ("Integer de param2 %d \n\r ", param2 );
+	        	 	   		printf("Suma param1 param2 %d \n\r ",(param1+param2) );*/
+
+	        	 	   	}
+	        	 	   	else
+	        	 	   		if (strcmp(lReceivedValue.cmd0, "AVAN") == 0)
+	        	 	   		{
+	        	 	   		vPrintString ("Comando AVAN \n\r");
+	        	 	   			DesplazaFsmState = FORWARD;
+	        	 	   			DesplazaFsmUpdate();
+	        	 	   			uartWriteString( UART_BLUETOOTH, "ACK AVAN\r\n" );
+	        	 	   		}
+	        	 	   		else
+	        	 	   			if (strcmp(lReceivedValue.cmd0, "STOP") == 0)
+	        	 	   			{
+	        	 	   				printf ("Comando STOP \n\r");
+	        	 	   				DesplazaFsmState = MOTORS_STOP;
+	        	 	   				DesplazaFsmUpdate();
+	        	 	   				uartWriteString( UART_BLUETOOTH, "ACK STOP\r\n" );
+	        	 	   			}
+	        	 	   			else
+	        	 	   				if (strcmp(lReceivedValue.cmd0, "RETR") == 0)
+	        	 	   				{
+	        	 	   					printf ("Comando BACKWARD \n\r");
+	        	 	   					DesplazaFsmState = BACKWARD;
+	        	 	   					DesplazaFsmUpdate();
+	        	 	   					uartWriteString( UART_BLUETOOTH, "ACK RETR\r\n" );
+	        	 	   				}
+	        	 	   				else
+	        	 	   					if (strcmp(lReceivedValue.cmd0, "DERE") == 0)
+	        	 	   					{
+	        	 	   						printf ("Comando RIGHT \n\r");
+	        	 	   						DesplazaFsmState = RIGHT;
+	        	 	   					}
+	        	 	   					else
+	        	 	   						if (strcmp(lReceivedValue.cmd0, "IZQ") == 0)
+	        	 	   						{
+	        	 	   							printf ("Comando LEFT \n\r");
+	        	 	   							DesplazaFsmState = LEFT;
+	        	 	   						}
+	        	 	   						else /* default: */
+	        	 	   						{
+	        	 	   							printf ("Comando Incorrecto \n\r");
+	        	 	   							uartWriteString( UART_BLUETOOTH, "Comando incorrecto\r\n" );
+	        	 	   						}
+	         } else {
+	            /* We did not receive anything from the queue even after waiting for 100ms.
+	            This must be an error as the sending tasks are free running and will be
+	            continuously writing to the queue. */
+	            vPrintString( "Could not receive from the queue.\r\n" );
+	         }
+
+	  // DesplazaFsmUpdate();
+
+
+
+
+
+     // vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
    }
 }
 
@@ -430,9 +531,9 @@ void btComParse (void)
 {
 	//strcpy(rxMsgFrame,"AVAN,1234,5678,9012\r\n");
 
-	uint32_t param1=0;	// Para convertir a int
+	/*uint32_t param1=0;	// Para convertir a int
 	uint32_t param2=0;
-	char *eptr;	// Para convertir a int.
+	char *eptr;	// Para convertir a int.*/
 
 	uartWriteString( UART_USB, rxMsgFrame);
 	frame_rec=FALSE;
@@ -441,8 +542,13 @@ void btComParse (void)
 
 	//message.cmd[0][]="Test";
 	//printf ("message.cmd %s\n\r",message.cmd[0]);
+
+	// Para RTOS.
+	msg_t lValueToSend;
+	BaseType_t xStatus;
+
 	msg_t message;
-	strcpy(message.cmd1,"Test");
+	//strcpy(message.cmd1,"Test");
 
 
 	char msg[6][5]={{0,0,0,0,0},
@@ -453,7 +559,7 @@ void btComParse (void)
 			{0,0,0,0,0}};		// "xxxx,xxxx,xxxx,xxxx,xxxx,xxxx\n" string del mensaje esperado
 	int j =0;
 
-	while (command != NULL)
+	while (command != NULL)		// Y si lo reemplazo por 1 for con i que recorra y cada 4 armo un message.cmdx. Y si i=5 no es coma lo descarto y fue?
 	{
 		printf ("Parseo %s\n\r",command);
 		if (strlen(command) > 6)	// Ver bien el largo... Solo mira el primero, arreglar!!
@@ -481,217 +587,32 @@ void btComParse (void)
 	printf ("msg %s\n\r",msg[3]);
 	printf ("msg %s\n\r",msg[4]);
 	printf ("msg %s\n\r",msg[5]);
-	printf ("message.cmd1 %s\n\r",message.cmd1);
+	//printf ("message.cmd1 %s\n\r",message.cmd1);
 
+	// Paso los datos del array a una estructura.
+	strcpy(message.cmd0,msg[0]);
+	strcpy(message.cmd1,msg[1]);
+	strcpy(message.cmd2,msg[2]);
+	strcpy(message.cmd3,msg[3]);
+	strcpy(message.cmd4,msg[4]);
+	strcpy(message.cmd5,msg[5]);
+
+	vPrintTwoStrings( "Luego de copiar msg0 a message0  message0= ",message.cmd0 );
+	vPrintTwoStrings( "Luego de copiar msg0 a message0  msg0= ",msg[0] );
+	printf ("msg %s\n\r",msg[0]);
+	printf ("messagecmd0 %s\n\r",message.cmd0);
 	// Aca tiene que ir la cola que envia los datos a la tarea de control.
 
+	lValueToSend = message;
+	vPrintTwoStrings( "Send = ", lValueToSend.cmd0 );
 
+	xStatus = xQueueSendToBack( xQueueBTrx_Control, &lValueToSend, 0 );
 
-	if (strcmp(msg[0], "CONF") == 0)
-	{
-		// Cambia el estado general segun el comando.
-		printf ("Comando CONF \n\r");
-		printf ("cmd: %s \n\r ", msg[0]);
-		printf ("parametro 1: %s \n\r ", msg[1]);
-		printf ("parametro 2: %s \n\r ", msg[2]);
-		param1= strtol (msg[1],&eptr,10 );
-		param2= strtol (msg[2],&eptr,10 );
-		printf ("Integer de param1 %d \n\r ", param1 );
-		printf ("Integer de param2 %d \n\r ", param2 );
-		printf("Suma param1 param2 %d \n\r ",(param1+param2) );
-
+	if( xStatus != pdPASS ) {
+		/* We could not write to the queue because it was full � this must
+	          be an error as the queue should never contain more than one item! */
+		vPrintString( "Could not send to the queue.\r\n" );
 	}
-	else
-		if (strcmp(msg[0], "AVAN") == 0)
-		{
-			printf ("Comando AVAN \n\r");
-			DesplazaFsmState = FORWARD;
-			uartWriteString( UART_BLUETOOTH, "ACK AVAN\r\n" );
-		}
-		else
-			if (strcmp(msg[0], "STOP") == 0)
-			{
-				printf ("Comando STOP \n\r");
-				DesplazaFsmState = MOTORS_STOP;
-			}
-			else
-				if (strcmp(msg[0], "RETR") == 0)
-				{
-					printf ("Comando BACKWARD \n\r");
-					DesplazaFsmState = BACKWARD;
-				}
-				else
-					if (strcmp(msg[0], "DERE") == 0)
-					{
-						printf ("Comando RIGHT \n\r");
-						DesplazaFsmState = RIGHT;
-					}
-					else
-						if (strcmp(msg[0], "IZQ") == 0)
-						{
-							printf ("Comando LEFT \n\r");
-							DesplazaFsmState = LEFT;
-						}
-						else /* default: */
-						{
-							printf ("Comando Incorrecto \n\r");
-							uartWriteString( UART_BLUETOOTH, "Comando incorrecto\r\n" );
-						}
 }
 
-
-void verifHC05 (void)	//VER QUE NO FUNCIONA.
-{
-	static char frame[200]="";
-	static uint8_t i=0;
-	static uint8_t data=0;
-	//uint8_t frame;
-	gpioWrite(LED1,HIGH);
-	gpioWrite(LED2,HIGH);
-
-	// Para entrar en modo AT en el HC-05. VERSION:2.0-20100601.
-	uartInterrupt(UART_232, false); // Apago IRQ UART BT.
-	gpioWrite(HC05_POWERTR_PIN,LOW);	// Apago HC-05 BT
-	gpioWrite(HC05_PIN34_AT_PIN,HIGH);	// Pongo PIN 34 HIGH
-	gpioWrite(HC05_POWERTR_PIN,HIGH);	// Enciendo HC-05 BT
-	uartConfig( UART_BLUETOOTH, 38400);	// Config UART a 38400 que es la BaudRate FIJO de la HC-05 en modo AT.
-
-	uartWriteString( UART_PC, "UART_BLUETOOTH Configurado para Modo AT (38400).\r\n" );
-
-	while (TRUE)
-	{
-		if( delayRead(&tiempo1) ) {
-			gpioWrite(LED1,LOW);
-			break;
-		}
-	}
-
-	uartWriteString( UART_PC, "Testeo si el modulo esta conectado enviando: AT\r\n" );
-	//uartWriteString( UART_BLUETOOTH, "AT\r\n" );
-
-	while (TRUE)
-	{
-		if( delayRead(&tiempo1) ) {
-			gpioWrite(LED2,LOW);
-			break;
-		}
-	}
-
-	while ( i < 100)
-		//MAX_MSG_SIZE)	// Ver ahora? Arreglar para que no rompa cuando ingreso mas bytes del maximo!
-	{
-		// i va de 0 a 29, son 30 elementos en total!
-		//printf ("i %d \n\r",i);
-		uartWriteString( UART_BLUETOOTH, "AT\r\n" );
-		uartReadByte( UART_232, &data );
-		//strcat(frame,data);
-		frame[i]= data;
-		printf ("data: %d i: %d  \n\r",data, i);
-		printf ("String: %s i: %d  \n\r",frame, i);
-		uartWriteString( UART_PC, frame );
-		//uartWriteByteArray(UART_PC,frame,200);
-		if (frame[i] == '\n')	// Ver si al enviar CR LF son 2 bytes y genera problemas...
-		{
-			// Significa que llego un string completo.
-			//strcpy(rxMsgFrame,frame);
-			//for (i = 0; i < MAX_MSG_SIZE; ++i)
-			//		{
-			//		  frame[i] = 0;
-			//		}
-			i=0;
-			if (strcmp(frame,"OK\r\n") == 0)
-			{
-				uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );
-			}
-			//printf ("String final: %s  \n\r",frame);
-
-			//uartWriteString( UART_PC, frame );
-			//	uartWriteString( UART_PC, "\r\n" );
-			break;
-			//frame_rec=TRUE;
-		}
-		else
-		{
-			i++;
-		}
-	}
-
-
-
-
-	/*if( waitForReceiveStringOrTimeout( UART_BLUETOOTH, "OK\r\n" ))
-			{
-
-				if (hm10bleTest( UART_BLUETOOTH ) ){
-					uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );
-
-				}
-				else{
-					uartWriteString( UART_PC, "No funciona.\r\n" );
-
-				}
-			}*/
-
-
-	/*
-	 *
-
-			    uartWriteString( UART_PC, "Testeo si el modulo esta conectado enviando: AT\r\n" );
-			   uartWriteString( UART_BLUETOOTH, "AT\r\n" );
-
-
-			   if( waitForReceiveStringOrTimeout( UART_BLUETOOTH, "OK\r\n" ))
-			   {
-					  // hm10bleTest( UART_BLUETOOTH ) ){
-				   uartWriteString( UART_PC, "Modulo conectado correctamente.\r\n" );
-			   }
-			   else{
-				   uartWriteString( UART_PC, "No funciona.\r\n" );
-			   }
-			   break;
-		   }
-	   }
-	 //  delay(500);	// Para darle tiempo a que el HC-05 reaccione.
-
-
-	   // Para entrar en modo AT en el HC-05.
-
-
-	   // Verifico funcionamiento de modulo HC-05.
-
-
-	      // Verifico funcionamiento de modulo HC-05.
-
-	   // Inicializar UART_232 para conectar al modulo bluetooth
-	   //uartConfig( UART_BLUETOOTH, 38400);
-	   //uartWriteString( UART_PC, "UART_BLUETOOTH para modulo Bluetooth configurada.\r\n" );
-	 */
-
-	// Para salir de modo AT en el HC-05. VERSION:2.0-20100601.
-	gpioWrite(HC05_POWERTR_PIN,LOW);	// Apago HC-05 BT
-	gpioWrite(HC05_PIN34_AT_PIN,LOW);	// Pongo PIN 34 LOW
-	// delay(1000);	// Para darle tiempo a que el HC-05 reaccione.
-
-	while (TRUE)
-	{
-		if( delayRead(&tiempo1) ) {
-			gpioWrite(LED2,LOW);
-			break;
-		}
-	}
-
-	gpioWrite(HC05_POWERTR_PIN,HIGH);	// Enciendo HC-05 BT
-	while (TRUE)
-	{
-		if( delayRead(&tiempo1) ) {
-			gpioWrite(LED2,LOW);
-			break;
-		}
-	}
-	uartConfig( UART_BLUETOOTH, 9600);	// Config UART a 38400 que es la BaudRate FIJO de la HC-05 en modo AT.
-	//  delay(1000);	// Para darle tiempo a que el HC-05 reaccione.
-	uartWriteString( UART_PC, "UART_BLUETOOTH Configurado para Modo SSP (9600).\r\n" );
-	uartInterrupt(UART_232, true); // Apago IRQ UART BT.
-	// Para salir de modo AT en el HC-05. VERSION:2.0-20100601.
-}
 /*==================[fin del archivo]========================================*/
