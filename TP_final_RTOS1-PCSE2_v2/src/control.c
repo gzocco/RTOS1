@@ -607,6 +607,7 @@ void btComParse (void)
 	vPrintTwoStrings( "Send = ", lValueToSend.cmd0 );
 
 	xStatus = xQueueSendToBack( xQueueBTrx_Control, &lValueToSend, 0 );
+// Reemplazar xQueueSendToBack por	xQueueSend
 
 	if( xStatus != pdPASS ) {
 		/* We could not write to the queue because it was full � this must
