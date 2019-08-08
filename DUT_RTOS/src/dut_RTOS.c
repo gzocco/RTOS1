@@ -27,7 +27,7 @@ on config.mk to tell SAPI to use FreeRTOS Systick
 
 #define CARACTER_ESCAPE '!'
 
-TaskHandle_t xHandle = NULL;
+TaskHandle_t xHandleTestTask = NULL;
 
 DEBUG_PRINT_ENABLE;
 
@@ -79,7 +79,8 @@ void hc05BridgeTask( void* pvParameters )
 						gpioToggle(LED1);
 						//break;
 						// Luego Encender IRQ de UART aqui.
-						vTaskDelete(NULL); //Mato la tarea
+						//vTaskDelete(NULL); //Mato la tarea
+						vTaskDelete(xHandleTestTask);
 			}
 			else
 			{
@@ -144,7 +145,6 @@ void tickTask( void* pvParameters )
 int main(void)
 {
 
-
 	debugPrintConfigUart( UART_USB, 9600 );
 	debugPrintlnString( "DEBUG: Mensajes de DEBUG encendidos. \n\r" );
 
@@ -165,7 +165,7 @@ int main(void)
 				configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
 				0,                          // Parametros de tarea
 				tskIDLE_PRIORITY+1,         // Prioridad de la tarea
-				&xHandle                           // Puntero a la tarea creada en el sistema
+				&xHandleTestTask                           // Puntero a la tarea creada en el sistema
 		);
 
 	vTaskStartScheduler();

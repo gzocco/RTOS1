@@ -480,6 +480,9 @@ void tarea_tecla__( void* taskParmPtr )
 
 void onRx( void *noUsado )
 {
+	BaseType_t xHigherPriorityTaskWoken;
+	xHigherPriorityTaskWoken = pdFALSE;
+
 	static uint8_t i=0;		// ver de poner static dentro de onRX.
 	static char frame[MAX_MSG_SIZE]="";
 
@@ -520,6 +523,7 @@ void onRx( void *noUsado )
 		//printf ("Descarto byte rx BT por mayor a MAX_MSG_SIZE i es %d \r\n ", i);
 		//uartWriteByte( UART_USB, frame );
 	}
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
 
 void comInterpreter(void)
