@@ -43,8 +43,11 @@ uint32_t get_t_pulsacion();
 void  reset_t_pulsacion();
 // Para debounce de TEC1
 
+
+
+// NO se usa en el ejercicio de RTOS1 - PCSE.
 // Para controlar maquina de estados que control el MODO DE OPERACION.
-typedef enum{
+typedef enum{			// NO se usa en el ejercicio de RTOS1 - PCSE.
 	INICIALIZANDO,
 	READY,
 	CONFIGURACION,
@@ -52,12 +55,12 @@ typedef enum{
 	AUTONAV,
 	CONLOST,
 	ERR
-} OpeModeFsmState_t;
+} OpeModeFsmState_t;	// NO se usa en el ejercicio de RTOS1 - PCSE.
 // Variable that hold the current state
-OpeModeFsmState_t OpeModeFsmState;
+OpeModeFsmState_t OpeModeFsmState;		// NO se usa en el ejercicio de RTOS1 - PCSE.
 // Para controlar maquina de estados que control el MODO DE OPERACION.
 
-typedef struct {
+typedef struct {		// NO se usa en el ejercicio de RTOS1 - PCSE.
    bool btConState;		// Estado de conexion de BT, segun pin STATE
    uint8_t maxTwaitBT;	// Maximo t que espera la conexion de BT antes de pasar a modo NOCON2BASE.
    uint8_t tReport2Base;	// Periodicidad de reporte de datos a Base.
@@ -72,10 +75,11 @@ typedef struct {
    float balance;
 } control_t;
 
-control_t controlData;	// Estructura de datos de control del UGV.
+// NO se usa en el ejercicio de RTOS1 - PCSE.
+control_t controlData;	// Estructura de datos de control del UGV. // NO se usa en el ejercicio de RTOS1 - PCSE.
 
 typedef struct {
-	char cmd[6][5];
+	char cmd[6][5];		// Quitar luego de cambiar funcion parse.
 	char cmd0[5];
 	char cmd1[5];
 	char cmd2[5];
@@ -87,13 +91,13 @@ typedef struct {
 
 // Para comunicacion por BT.
 char rxMsgFrame[MAX_MSG_SIZE]="";
-bool frame_rec=FALSE;
+bool frame_rec=FALSE;		// Quitar luego de implementar cola.
 // Para comunicacion por BT.
 
 /*==================[definiciones de datos internos de Colas]=========================*/
 QueueHandle_t xQueueBTrx_Control;		// Sacado de ejemplo 10 de FreeRTOS.
 
-TaskHandle_t xHandle_hc05Bridge_Task = NULL;
+TaskHandle_t xHandle_hc05Bridge_Task = NULL;	// Para manejar Delete de tarea Bridge AT.
 
 
 //msg_t message;
@@ -121,8 +125,6 @@ void btComTask ( void* taskParmPtr );
 //void btInit(void);
 void tarea_led__( void* taskParmPtr );
 extern void hc05Bridge_Task ( void* taskParmPtr );
-
-
 
 void btComParse (void);
 
