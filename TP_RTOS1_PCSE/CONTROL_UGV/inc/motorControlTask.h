@@ -1,0 +1,13 @@
+/*
+ *#include
+ *
+ *  Created on: Aug 15, 2019
+ *      Author: gzocco
+ */
+
+#ifndef PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_MOTORCONTROLTASK_H_
+#define PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_MOTORCONTROLTASK_H_
+
+void motorControlTask ( void* taskParmPtr );
+
+#endif /* PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_MOTORCONTROLTASK_H_ */

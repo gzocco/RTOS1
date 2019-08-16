@@ -1,0 +1,14 @@
+/*
+ * hc05Bridge.h
+ *
+ *  Created on: Aug 15, 2019
+ *      Author: gzocco
+ */
+
+#ifndef PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_HC05BRIDGE_H_
+#define PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_HC05BRIDGE_H_
+
+#define CARACTER_ESCAPE '!'
+void hc05Bridge ( void);
+
+#endif /* PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_HC05BRIDGE_H_ */
