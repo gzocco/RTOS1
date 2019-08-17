@@ -29,11 +29,6 @@
 
 /*=====[Definitions of public global variables]==============================*/
 
-
-
-
-
-
 /*=====[Definitions of private global variables]=============================*/
 
 /*=====[Main function, program entry point after power on or reset]==========*/
@@ -44,6 +39,7 @@ int main( void )
 {
 	boardInit();
 	hardwareInit ();
+	DesplazaFsmInit();
 	debugPrintConfigUart( UART_USB, 9600 );
 	debugPrintlnString( "Control con RTOS \n\r" );
 
