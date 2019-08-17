@@ -9,7 +9,7 @@
 #include "accionaMotores.h"
 #include "hardwareInit.h"
 
-DesplazaFsmState_t DesplazaFsmState;
+//DesplazaFsmState_t DesplazaFsmState;
 
 void forward(uint8_t speedMotor1, uint8_t speedMotor2)
 {

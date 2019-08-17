@@ -24,6 +24,8 @@ typedef enum{
 	MOTORS_STOP
 } DesplazaFsmState_t;
 
+DesplazaFsmState_t DesplazaFsmState;
+
 void forward(uint8_t speedMotor1, uint8_t speedMotor2);
 void backward(uint8_t speedMotor1, uint8_t speedMotor2);
 void right(uint8_t speedMotor1, uint8_t speedMotor2);

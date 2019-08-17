@@ -34,7 +34,7 @@ void onRx( void *noUsado )
 	if( xStatus != pdPASS ) {
 		/* We could not write to the queue because it was full � this must
    		          be an error as the queue should never contain more than one item! */
-		vPrintString( "xQueue_BTrx_FrameParser: Could not send to the queue.\r\n" );
+		uartWriteString (UART_USB, "xQueue_BTrx_FrameParser: Could not send to the queue.\r\n");
 	}
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );

@@ -46,33 +46,28 @@ void hc05Bridge ( void)
 			if( data == CARACTER_ESCAPE ) {		//"!" Es un caracter de escape para salir de la tarea.
 				//taskEXIT_CRITICAL();
 				//gpioWrite( LEDB, ON );
-				vPrintString( "Salgo modo Bridge AT por recibir CARACTER_ESCAPE.\r\n" );
+				uartWriteString(UART_USB,"Salgo modo Bridge AT por recibir CARACTER_ESCAPE.\r\n" );
 				// Para salir de modo AT en el HC-05. VERSION:2.0-20100601.
 				gpioWrite(HC05_POWERTR_PIN,LOW);	// Apago HC-05 BT
 				gpioWrite(HC05_PIN34_AT_PIN,LOW);	// Pongo PIN 34 LOW
 				vTaskDelay(800/portTICK_RATE_MS); // Para darle tiempo a que el HC-05 reaccione.
 				gpioWrite(HC05_POWERTR_PIN,HIGH);	// Enciendo HC-05 BT
 				uartConfig( UART_232, 9600);	// Config UART a 38400 que es la BaudRate FIJO de la HC-05 en modo AT.
-				vPrintString( "BT en modo SPP a 9600.\r\n" );
+				uartWriteString(UART_USB, "BT en modo SPP a 9600.\r\n" );
 				vTaskDelay(800/portTICK_RATE_MS);
-				//gpioToggle(LED1);
-
 				uartClearPendingInterrupt(UART_BLUETOOTH);
 				uartCallbackClr( UART_BLUETOOTH, UART_RECEIVE );
-				 uartConfig(UART_232, 9600);
-				   // Seteo un callback al evento de recepcion y habilito su interrupcion
-				   uartCallbackSet(UART_232, UART_RECEIVE, onRx, NULL);
-				   // Habilito todas las interrupciones de UART_USB
-				   uartInterrupt(UART_232, true);
+				uartConfig(UART_232, 9600);
+				// Seteo un callback al evento de recepcion y habilito su interrupcion
+				uartCallbackSet(UART_232, UART_RECEIVE, onRx, NULL);
+				// Habilito todas las interrupciones de UART_USB
+				uartInterrupt(UART_232, true);
 
 				//uartClearPendingInterrupt(UART_PC);
-					        		// xQueueReset(xHandle_Recibe_Cola_de_onRX);
-
-					        		 //vTaskDelete(xHandle_Recibe_Cola_de_onRX); // Mato la tarea.
-					        		 //vTaskResume(xHandle_Parsea_Cola_de_onRX);
-					        		// vTaskDelete(xHandle_hc05Bridge_Task);
-
-
+				// xQueueReset(xHandle_Recibe_Cola_de_onRX);
+				//vTaskDelete(xHandle_Recibe_Cola_de_onRX); // Mato la tarea.
+				//vTaskResume(xHandle_Parsea_Cola_de_onRX);
+				// vTaskDelete(xHandle_hc05Bridge_Task);
 				//uartInterrupt(UART_USB, true);		// Enciendo interrupciones
 				//xTaskResumeAll ();
 				//vTaskSuspend(xHandle_hc05Bridge_Task);
@@ -102,6 +97,6 @@ void hc05Bridge ( void)
 
 			*/
 	//	}
-		vTaskDelay(50/portTICK_RATE_MS);
+		//vTaskDelay(50/portTICK_RATE_MS);
 	}
 }

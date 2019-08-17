@@ -79,7 +79,7 @@ void motorControlTask ( void* taskParmPtr )
 					{
 						vPrintString ("Comando AVAN \n\r");
 						DesplazaFsmState = FORWARD;
-						DesplazaFsmUpdate();
+						DesplazaFsmUpdate();	// Pasarle la velocidad para el PWM en esta funcion. Serian cmd1 y cmd2; luego de convertirlos a int..
 						uartWriteString( UART_BLUETOOTH, "ACK AVAN\r\n" );
 					}
 					else
@@ -126,13 +126,6 @@ void motorControlTask ( void* taskParmPtr )
 				vPrintString( "Could not receive from the queue.\r\n" );
 			}
 		}
-
 		// DesplazaFsmUpdate();
-
-
-
-
-
-		// vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
 	}
 }

@@ -17,6 +17,8 @@
 #include "hardwareInit.h"
 #include "motorControlTask.h"
 #include "Parsea_Cola_de_onRX.h"
+#include "esperaCom.h"
+#include "accionaMotores.h"
 
 #include "onRx.h"
 
@@ -79,7 +81,7 @@ int main( void )
 
       xTaskCreate(
     		  Parsea_Cola_de_onRX,                     // Funcion de la tarea a ejecutar
-			  (const char *)"Recibe_Cola_de_onRX",     // Nombre de la tarea como String amigable para el usuario
+			  (const char *)"Parsea_Cola_de_onRX",     // Nombre de la tarea como String amigable para el usuario
 			  configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
 			  0,                          // Parametros de tarea
 			  tskIDLE_PRIORITY+1,         // Prioridad de la tarea
@@ -88,7 +90,16 @@ int main( void )
 
       xTaskCreate(
     		  motorControlTask,                     // Funcion de la tarea a ejecutar
-			  (const char *)"mControlTask",     // Nombre de la tarea como String amigable para el usuario
+			  (const char *)"motorControlTask",     // Nombre de la tarea como String amigable para el usuario
+			  configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
+			  0,                          // Parametros de tarea
+			  tskIDLE_PRIORITY+1,         // Prioridad de la tarea
+			  0                           // Puntero a la tarea creada en el sistema
+      );
+
+      xTaskCreate(
+    		  esperaCom,                     // Funcion de la tarea a ejecutar
+			  (const char *)"esperaCom",     // Nombre de la tarea como String amigable para el usuario
 			  configMINIMAL_STACK_SIZE*2, // Cantidad de stack de la tarea
 			  0,                          // Parametros de tarea
 			  tskIDLE_PRIORITY+1,         // Prioridad de la tarea
