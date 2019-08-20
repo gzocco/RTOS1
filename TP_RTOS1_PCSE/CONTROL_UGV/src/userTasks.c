@@ -2,6 +2,9 @@
  * Author: Gustavo Zocco <gzocco@gmail.com>
  * Date: 2019/08/15
  * Version: 0.1
+ *
+ *
+ * Esta tarea no se utiliza para la presente implementacion.
  *===========================================================================*/
 
 /*=====[Inclusion of own header]=============================================*/

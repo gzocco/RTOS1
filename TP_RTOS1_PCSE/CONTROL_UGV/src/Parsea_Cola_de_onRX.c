@@ -3,6 +3,11 @@
  *
  *  Created on: Aug 15, 2019
  *      Author: gzocco
+ *
+ *
+ *      Tarea que recibe los bytes de la Cola xQueue_BTrx_frameParser
+ *      los parsea y envia el comando recibido a la tarea de control de los motores
+ *      por medio de la cola xQueue_frameParser_Control..
  */
 #include "sapi.h"
 #include "FreeRTOS.h"

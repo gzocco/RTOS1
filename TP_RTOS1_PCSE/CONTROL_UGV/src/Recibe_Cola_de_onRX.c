@@ -3,6 +3,8 @@
  *
  *  Created on: Aug 15, 2019
  *      Author: gzocco
+ *
+ *      Esta tarea no se utiliza para la presente implementacion.
  */
 #include "sapi.h"
 #include "Recibe_Cola_de_onRX.h"

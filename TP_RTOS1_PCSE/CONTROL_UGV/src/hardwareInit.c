@@ -3,6 +3,11 @@
  *
  *  Created on: Aug 6, 2019
  *      Author: gzocco
+ *
+ *
+ *      Funcion que inicializa el hardware y
+ *      verifica el funcionamiento del modulo BT.
+ *
  */
 #include "sapi.h"
 #include "hardwareInit.h"

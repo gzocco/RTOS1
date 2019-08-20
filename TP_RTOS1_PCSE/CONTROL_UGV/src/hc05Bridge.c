@@ -3,6 +3,11 @@
  *
  *  Created on: Aug 15, 2019
  *      Author: gzocco
+ *
+ *      Funcion que pone el modulo HC-05 en modo comandos AT
+ *      y la las UART en bridge para poder cursarle comandos AT
+ *      desde la UART USB a la UART 232 y asi configurar o
+ *      ver la configuracion del modulo.
  */
 #include "hardwareInit.h"
 #include "hc05Bridge.h"

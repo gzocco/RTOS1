@@ -3,6 +3,9 @@
  *
  *  Created on: Aug 17, 2019
  *      Author: gzocco
+ *
+ *      Tarea que verifica el estadp de conexion al modulo
+ *      BT y reacciona segun el caso.
  */
 #include "esperaCom.h"
 #include "hardwareInit.h"
@@ -16,14 +19,14 @@ void esperaCom ( void* taskParmPtr )
 	{
 		 static bool_t waitBT=1;
 		 static bool_t waitComandos=1;
-		// Aca comienza tarea de recepcion de datos BT.
+
 		if (!gpioRead (HC05_STATE_PIN))
 		{
 			waitComandos=1;
 			gpioWrite(LED1,HIGH);
 			if (waitBT)
 			{
-				DesplazaFsmState = MOTORS_STOP;
+				DesplazaFsmState = MOTORS_STOP;		// Si se desconecta del BT, deja de accionar los motores.
 				DesplazaFsmUpdate();
 				uartWriteString( UART_PC, "Esperando Conexion al BT.\r\n" );
 				waitBT=0;

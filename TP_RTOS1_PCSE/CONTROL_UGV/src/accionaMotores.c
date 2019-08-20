@@ -3,6 +3,11 @@
  *
  *  Created on: Aug 7, 2019
  *      Author: gzocco
+ *
+ *   Funciones que gobiernan el accionamiento de los
+ *   motores de CC mediante el puente H.
+ *
+ *
  */
 
 //#include "motorControl.h"

@@ -3,6 +3,11 @@
  *
  *  Created on: Aug 15, 2019
  *      Author: gzocco
+ *
+ *      Tarea que recibe el mensaje parseado de Parsea_Cola_de _onRX
+ *      lo interpreta y acciona la funcion que corresponda segun el
+ *      comando recibido.
+ *
  */
 
 #include "FreeRTOS.h"
