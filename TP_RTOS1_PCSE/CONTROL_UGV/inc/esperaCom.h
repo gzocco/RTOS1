@@ -10,5 +10,4 @@
 
 void esperaCom ( void* taskParmPtr );
 
-
 #endif /* PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_ESPERACOM_H_ */

@@ -10,11 +10,8 @@
  *
  */
 
-//#include "motorControl.h"
 #include "accionaMotores.h"
 #include "hardwareInit.h"
-
-//DesplazaFsmState_t DesplazaFsmState;
 
 void forward(uint8_t speedMotor1, uint8_t speedMotor2)
 {
@@ -26,7 +23,6 @@ void forward(uint8_t speedMotor1, uint8_t speedMotor2)
 
 	gpioWrite(MOTOR1_ENA_PIN, HIGH);
 	gpioWrite(MOTOR2_ENB_PIN, HIGH);
-
 }
 
 void backward(uint8_t speedMotor1, uint8_t speedMotor2)
@@ -81,15 +77,12 @@ void motors_stop(uint8_t speedMotor1, uint8_t speedMotor2)
 
 void DesplazaFsmError( void )
 {
-	// Error handler, example, restart FSM:
 	DesplazaFsmState = MOTORS_STOP;
 }
 
 // FSM Initialize Function
 void DesplazaFsmInit( void )
 {
-	// Example:
-	// boardInit();          // Initialize hardware
 	DesplazaFsmState = MOTORS_STOP;   // Set initial state
 }
 
@@ -139,7 +132,7 @@ int motorControl(uint8_t direction, uint8_t speedMotor1, uint8_t speedMotor2)
 		left (speedMotor1,speedMotor2);
 		break;
 	default:
-		printf("Algo esta mal si llegaste aca...");
+		printf("DEBUG: Error en funcion motorControl");
 		motors_stop(0,0);
 	}
 	return 0;

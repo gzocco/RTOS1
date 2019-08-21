@@ -19,9 +19,7 @@
 #include "Parsea_Cola_de_onRX.h"
 #include "esperaCom.h"
 #include "accionaMotores.h"
-
 #include "onRx.h"
-
 #include "supporting_functions.h"
 #include "../../../_programs/RTOS1/TP_RTOS1_PCSE/CONTROL_UGV/inc/CONTROL_UGV.h"
 

@@ -38,50 +38,40 @@ void motorControlTask ( void* taskParmPtr )
 	uint32_t param2=0;
 	char *eptr;	// Para convertir a int los string de los cmd.
 
-	//fsmButtonInit();
-
-	// Tarea periodica cada 1 ms
-	// portTickType xPeriodicity =  20 / portTICK_RATE_MS;
-	// portTickType xLastWakeTime = xTaskGetTickCount();
-
 	// ---------- REPETIR POR SIEMPRE --------------------------
 	while(TRUE)
 	{
-		if( uxQueueMessagesWaiting( xQueue_frameParser_Control ) != 0 ) {
-			//vPrintString( "Queue should have been empty!\r\n" );
-
+		if( uxQueueMessagesWaiting( xQueue_frameParser_Control ) != 0 )
+		{
 			xStatus = xQueueReceive( xQueue_frameParser_Control, &lReceivedValue, xTicksToWait );
-
-			if( xStatus == pdPASS ) {
+			if( xStatus == pdPASS )
+			{
 				/* Data was successfully received from the queue, print out the received
 	            value. */
-				vPrintTwoStrings( "Received0 = ", lReceivedValue.cmd0 );
-				vPrintTwoStrings( "Received1= ", lReceivedValue.cmd1 );
+				vPrintTwoStrings( "Received0 = ", lReceivedValue.cmd0 );	// Para DEBUG
+				vPrintTwoStrings( "Received1= ", lReceivedValue.cmd1 );		// Para DEBUG
 				if (strcmp(lReceivedValue.cmd0, "CFGB") == 0)
 				{
 					uartWriteString( UART_BLUETOOTH, "ACK CFGB\r\n" );
 					uartInterrupt(UART_232, false);
 					uartClearPendingInterrupt(UART_BLUETOOTH);
 					uartCallbackClr( UART_BLUETOOTH, UART_RECEIVE );
-
-
-					// vTaskSuspend(xHandle_Parsea_Cola_de_onRX);
 					hc05Bridge ();
-					/*	Para DEBUG.
-					 * 	printf ("Comando CONF \n\r");
-	        	 	   		printf ("cmd: %s \n\r ", lReceivedValue.cmd0);
-	        	 	   		printf ("parametro 1: %s \n\r ", lReceivedValue.cmd1);
-	        	 	   		printf ("parametro 2: %s \n\r ", lReceivedValue.cmd2);
-	        	 	   		param1= strtol (lReceivedValue.cmd1,&eptr,10 );
-	        	 	   		param2= strtol (lReceivedValue.cmd2,&eptr,10 );
-	        	 	   		printf ("Integer de param1 %d \n\r ", param1 );
-	        	 	   		printf ("Integer de param2 %d \n\r ", param2 );
-	        	 	   		printf("Suma param1 param2 %d \n\r ",(param1+param2) );
-					 */
 				}
 				else
 					if (strcmp(lReceivedValue.cmd0, "AVAN") == 0)
 					{
+						/*	Para DEBUG. Transforma string de parametros en int para utilizarlo.
+						 * 	printf ("Comando CONF \n\r");
+		        	 	   		printf ("cmd: %s \n\r ", lReceivedValue.cmd0);
+		        	 	   		printf ("parametro 1: %s \n\r ", lReceivedValue.cmd1);
+		        	 	   		printf ("parametro 2: %s \n\r ", lReceivedValue.cmd2);
+		        	 	   		param1= strtol (lReceivedValue.cmd1,&eptr,10 );
+		        	 	   		param2= strtol (lReceivedValue.cmd2,&eptr,10 );
+		        	 	   		printf ("Integer de param1 %d \n\r ", param1 );
+		        	 	   		printf ("Integer de param2 %d \n\r ", param2 );
+		        	 	   		printf("Suma param1 param2 %d \n\r ",(param1+param2) );
+						 */
 						vPrintString ("Comando AVAN \n\r");
 						DesplazaFsmState = FORWARD;
 						DesplazaFsmUpdate();	// Pasarle la velocidad para el PWM en esta funcion. Serian cmd1 y cmd2; luego de convertirlos a int..
@@ -121,7 +111,7 @@ void motorControlTask ( void* taskParmPtr )
 									}
 									else /* default: */
 									{
-										printf ("Comando Incorrecto \n\r");
+										printf ("DEBUG: Comando Incorrecto \n\r");
 										uartWriteString( UART_BLUETOOTH, "Comando incorrecto\r\n" );
 									}
 			} else {
@@ -131,6 +121,5 @@ void motorControlTask ( void* taskParmPtr )
 				vPrintString( "Could not receive from the queue.\r\n" );
 			}
 		}
-		// DesplazaFsmUpdate();
 	}
 }

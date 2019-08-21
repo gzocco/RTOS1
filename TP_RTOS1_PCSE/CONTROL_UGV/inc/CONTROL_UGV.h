@@ -16,9 +16,7 @@
 #include "queue.h"
 #include "task.h"
 
-
 typedef struct {
-	//char cmd[6][5];		// Quitar luego de cambiar funcion parse.
 	char cmd0[5];
 	char cmd1[5];
 	char cmd2[5];
@@ -27,14 +25,11 @@ typedef struct {
 	char cmd5[5];
 } msg_t;
 
-
 QueueHandle_t xQueue_BTrx_frameParser;
 QueueHandle_t xQueue_frameParser_Control;
 
 TaskHandle_t xHandle_Parsea_Cola_de_onRX;
 TaskHandle_t xHandle_Recibe_Cola_de_onRX;
-
-TaskHandle_t xHandle_hc05Bridge_Task;
 
 /*=====[C++ - begin]=========================================================*/
 

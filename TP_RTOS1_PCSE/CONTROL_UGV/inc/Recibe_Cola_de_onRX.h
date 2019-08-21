@@ -10,5 +10,4 @@
 
 void Recibe_Cola_de_onRX( void* pvParameters );
 
-
 #endif /* PROGRAMS_RTOS1_TP_RTOS1_PCSE_CONTROL_UGV_INC_RECIBE_COLA_DE_ONRX_H_ */
